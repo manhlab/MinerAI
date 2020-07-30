@@ -1,5 +1,8 @@
 import sys
-from src import *
+from DQNModel import DQN # A class of creating a deep q-learning model
+from MinerEnv import MinerEnv # A class of creating a communication environment between the DQN model and the GameMiner environment (GAME_SOCKET_DUMMY.py)
+from Memory import Memory # A class of creating a batch in order to store experiences for the training process
+
 import pandas as pd
 import datetime 
 import numpy as np
@@ -111,5 +114,5 @@ for episode_i in range(0, N_EPISODE):
         import traceback
 
         traceback.print_exc()
-        print("Finished.")
+        # print("Finished.")
         break
