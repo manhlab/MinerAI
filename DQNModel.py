@@ -57,14 +57,16 @@ class DQN:
       model = Sequential()
       model.add(Dense(300, input_dim=self.input_dim))
       model.add(Activation('relu'))
-      model.add(Dense(300))
+      model.add(Dense(64, input_dim=300))
       model.add(Activation('relu'))
       model.add(Dense(self.action_space))
-      model.add(Activation('linear'))    
-      #adam = optimizers.adam(lr=self.learning_rate)
-      sgd = optimizers.SGD(lr=self.learning_rate, decay=1e-6, momentum=0.95)
-      model.compile(optimizer = sgd,
-              loss='mse')
+      model.add(Activation('sigmoid'))
+       
+      adam = optimizers.adam(lr=self.learning_rate)
+      #sgd = optimizers.SGD(lr=self.learning_rate, decay=1e-6, momentum=0.95)
+      loss_fn = tf.keras.losses.Huber()
+      model.compile(optimizer = adam,
+              loss=loss_fn)
       return model
   
     

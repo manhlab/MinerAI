@@ -114,5 +114,5 @@ for episode_i in range(0, N_EPISODE):
         import traceback
 
         traceback.print_exc()
-        # print("Finished.")
+        print("Finished.")
         break
