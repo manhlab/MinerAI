@@ -1,4 +1,3 @@
-from MINER_STATE import State
 import numpy as np
 
 

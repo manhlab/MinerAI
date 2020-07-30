@@ -1,4 +1,3 @@
-from MINER_STATE import State
 import numpy as np
 
 
@@ -14,7 +13,7 @@ class PlayerInfo:
         self.freeCount = 0
 
 
-class Bot1:
+class Bot2:
     ACTION_GO_LEFT = 0
     ACTION_GO_RIGHT = 1
     ACTION_GO_UP = 2
@@ -35,15 +34,7 @@ class Bot1:
         if self.info.energy < 5:
             return self.ACTION_FREE
         else:
-            action = self.ACTION_GO_UP
-            if self.info.posy % 2 == 0:
-                if self.info.posx < self.state.mapInfo.max_x:
-                    action = self.ACTION_GO_RIGHT
-            else:
-                if self.info.posx > 0:
-                    action = self.ACTION_GO_LEFT
-                else:
-                    action = self.ACTION_GO_DOWN
+            action = np.random.randint(0, 4)
             return action
 
     def new_game(self, data):

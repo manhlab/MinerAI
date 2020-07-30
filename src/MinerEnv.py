@@ -1,7 +1,6 @@
 import sys
 import numpy as np
-from GAME_SOCKET_DUMMY import GameSocket #in testing version, please use GameSocket instead of GAME_SOCKET_DUMMY
-from MINER_STATE import State
+
 
 
 TreeID = 1

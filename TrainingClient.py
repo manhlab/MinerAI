@@ -1,8 +1,5 @@
 import sys
-from DQNModel import DQN # A class of creating a deep q-learning model
-from MinerEnv import MinerEnv # A class of creating a communication environment between the DQN model and the GameMiner environment (GAME_SOCKET_DUMMY.py)
-from Memory import Memory # A class of creating a batch in order to store experiences for the training process
-
+from src import *
 import pandas as pd
 import datetime 
 import numpy as np
