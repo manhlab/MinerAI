@@ -10,6 +10,7 @@ from keras import optimizers
 from keras import backend as K
 import tensorflow as tf
 from random import random, randrange
+import os.path
 
 
 # Deep Q Network off-policy
@@ -42,7 +43,7 @@ class DQN:
       #Creating networks
       self.model        = self.create_model() #Creating the DQN model
       self.target_model = self.create_model() #Creating the DQN target model
-      
+      #self.load_model()
       #Tensorflow GPU optimization
       config = tf.compat.v1.ConfigProto()
       config.gpu_options.allow_growth = True
@@ -57,14 +58,14 @@ class DQN:
       model = Sequential()
       model.add(Dense(300, input_dim=self.input_dim))
       model.add(Activation('relu'))
-      model.add(Dense(300))
+      model.add(Dense(64))
       model.add(Activation('relu'))
       model.add(Dense(self.action_space))
-      model.add(Activation('linear'))    
-      #adam = optimizers.adam(lr=self.learning_rate)
-      sgd = optimizers.SGD(lr=self.learning_rate, decay=1e-6, momentum=0.95)
-      model.compile(optimizer = sgd,
-              loss='mse')
+      model.add(Activation('softmax'))    
+      adam = optimizers.adam(lr=self.learning_rate)
+      #sgd = optimizers.SGD(lr=self.learning_rate, decay=1e-6, momentum=0.95)
+      model.compile(optimizer = adam,
+              loss=tf.keras.losses.Huber())
       return model
   
     
@@ -121,5 +122,9 @@ class DQN:
             # serialize weights to HDF5
             self.model.save_weights(path + model_name + ".h5")
             print("Saved model to disk")
+    def load_model(self):
+      
+      if os.path.isfile('TrainedModels/bestweight.h5'):
+          self.model.load_weights('TrainedModels/bestweight.h5')
  
 

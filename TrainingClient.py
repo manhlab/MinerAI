@@ -41,9 +41,10 @@ memory = Memory(MEMORY_SIZE)
 minerEnv = MinerEnv(HOST, PORT) #Creating a communication environment between the DQN model and the game environment (GAME_SOCKET_DUMMY.py)
 minerEnv.start()  # Connect to the game
 
-train = False #The variable is used to indicate that the replay starts, and the epsilon starts decrease.
+train = True #The variable is used to indicate that the replay starts, and the epsilon starts decrease.
 #Training Process
 #the main part of the deep-q learning agorithm 
+all_reward = 0
 for episode_i in range(0, N_EPISODE):
     try:
         # Choosing a map in the list
@@ -103,13 +104,14 @@ for episode_i in range(0, N_EPISODE):
 
         
         #Print the training information after the episode
-        print('Episode %d ends. Number of steps is: %d. Accumulated Reward = %.2f. Epsilon = %.2f .Termination code: %d' % (
-            episode_i + 1, step + 1, total_reward, DQNAgent.epsilon, terminate))
-        
+        # print('Episode %d ends. Number of steps is: %d. Accumulated Reward = %.2f. Epsilon = %.2f .Termination code: %d' % (
+        #     episode_i + 1, step + 1, total_reward, DQNAgent.epsilon, terminate))
+        all_reward+= total_reward
         #Decreasing the epsilon if the replay starts
         if train == True:
             DQNAgent.update_epsilon()
-
+    
+        print("Total rewards: ", all_reward/(episode_i+1))
     except Exception as e:
         import traceback
 
