@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
-from warnings import simplefilter 
-simplefilter(action='ignore', category=FutureWarning)
+from warnings import simplefilter
+
+simplefilter(action="ignore", category=FutureWarning)
 
 import numpy as np
+
 # from keras.models import Sequential
 # from keras.models import model_from_json
 # from keras.layers import Dense, Activation
@@ -13,134 +15,110 @@ from random import random, randrange
 import os.path
 
 import torch
+
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from utils import Model4Gold
+from utils import DQNetwork, ReplayBuffer
 
 # Deep Q Network off-policy
-class DQN: 
-   
-    def __init__(
-            self,
-            input_dim, #The number of inputs for the DQN network
-            action_space, #The number of actions for the DQN network
-            learning_rate = 0.00025, #The learning rate for the DQN network
-            tau = 0.125, #The factor for updating the DQN target network from the DQN network
-            model = None, #The DQN model
-            target_model = None, #The DQN target model 
-            device='cpu',
-            accumulation_steps = 1):
-      self.input_dim = input_dim
-      self.action_space = action_space
-      self.accumulation_steps = accumulation_steps
-      self.epsilon=0.1
-      self.gamma = 0.1
-      self.epsilon_min = 0.05
-      self.epsilon_decay = 0.9
-      self.device = device
-      
-      #Creating networks
-      self.model        = Model4Gold(self.action_space) #Creating the DQN model
-      self.target_model = Model4Gold(self.action_space) #Creating the DQN target model
+class DQN:
+    def __init__(self,input_dims=198, n_actions= 6, gamma=0.1, epsilon = 0.9, lr=0.0005,
+                 mem_size=10000, batch_size=32, eps_min=0.01, eps_dec=5e-7,
+                 replace=1000, algo='dnqagent', env_name='minerai', chkpt_dir='tmp/dqn'):
+        self.gamma = gamma
+        self.epsilon = epsilon
+        self.lr = lr
+        self.n_actions = n_actions
+        self.input_dims = input_dims
+        self.batch_size = batch_size
+        self.eps_min = eps_min
+        self.eps_dec = eps_dec
+        self.replace_target_cnt = replace
+        self.algo = algo
+        self.env_name = env_name
+        self.chkpt_dir = chkpt_dir
+        self.action_space = [i for i in range(n_actions)]
+        self.learn_step_counter = 0
 
-      ## optimizzer deploy
-      param_optimizer = list(self.model.named_parameters())
-      no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
-      optimizer_grouped_parameters = [
-            {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)], 'weight_decay': 0.001},
-            {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
-        ] 
-      self.optimizer = torch.optim.AdamW(optimizer_grouped_parameters, lr=learning_rate)
-      self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, mode='min',
-                                                                  factor=0.5,
-                                                                  patience=1,
-                                                                  verbose=False,
-                                                                  threshold=0.0001,
-                                                                  threshold_mode='abs',
-                                                                  cooldown=0,
-                                                                  min_lr=1e-8,
-                                                                  eps=1e-08)
-      self.load_model()
-     
-    
-    def act(self,state):     
-      a_max = np.argmax(self.model(torch.tensor(state, dtype=torch.float)).detach().numpy())     
-      if (random() < self.epsilon):
-        a_chosen = randrange(self.action_space)
-      else:
-        a_chosen = a_max      
-      return a_chosen
-    
-    
-    def replay(self,samples,batch_size):
-      inputs = np.zeros((batch_size, self.input_dim))
-      targets = np.zeros((batch_size, self.action_space))
-      
-      for i in range(0,batch_size):
-        state = samples[0][i,:]
-        action = samples[1][i]
-        reward = samples[2][i]
-        new_state = samples[3][i,:]
-        done= samples[4][i]
-        
-        inputs[i,:] = state
-        targets[i,:] = self.target_model(torch.tensor(state, dtype=torch.float)).detach().numpy()       
-        if done:
-          targets[i,action] = reward
+        self.memory = ReplayBuffer(mem_size, input_dims, n_actions)
+
+        self.q_eval = DQNetwork(self.lr, self.n_actions,
+                                    input_dims=self.input_dims,
+                                    name=self.env_name+'_'+self.algo+'_q_eval',
+                                    chkpt_dir=self.chkpt_dir)
+        if os.path.exists(self.q_eval.checkpoint_file):
+          self.q_eval.load_checkpoint()
+
+
+        self.q_next = DQNetwork(self.lr, self.n_actions,
+                                    input_dims=self.input_dims,
+                                    name=self.env_name+'_'+self.algo+'_q_next',
+                                    chkpt_dir=self.chkpt_dir)
+        if os.path.exists(self.q_next.checkpoint_file):
+          self.q_next.load_checkpoint()
+
+    def choose_action(self, observation):
+        if np.random.random() > self.epsilon:
+            state = torch.tensor([observation],dtype=torch.float).to(self.q_eval.device)
+            actions = self.q_eval.forward(state)
+            action = torch.argmax(actions).item()
         else:
-          Q_future = np.max(self.target_model(torch.tensor(state, dtype=torch.float)).detach().numpy())
-          targets[i,action] = Q_future 
-      #Training
-      loss = self.train_on_batch(inputs, targets, batch_size) 
+            action = np.random.choice(self.action_space)
 
+        return action
 
+    def store_transition(self, state, action, reward, state_, done):
+        self.memory.store_transition(state, action, reward, state_, done)
 
-    def train_on_batch(self, inputs,target, batch_size):
-        self.model.train()
-        self.model.to(self.device)
-        if self.accumulation_steps > 1:
-            self.optimizer.zero_grad()
-       
-        losses = 0
-        for b_idx, data in enumerate(inputs):
-            if self.accumulation_steps == 1 and b_idx == 0:
-                self.optimizer.zero_grad()
-            data  = torch.tensor(data, dtype=torch.float).to(self.device)
-            output = self.model(data)
-            yt = torch.tensor(target[b_idx,:], dtype=torch.float).view(-1)
-            loss = torch.nn.BCELoss()(output, yt)
-            with torch.set_grad_enabled(True):
-                loss.backward()
-                if (b_idx + 1) % self.accumulation_steps == 0:
-                    self.optimizer.step()
-                    self.scheduler.step(metrics=loss)
-                    if b_idx > 0:
-                        self.optimizer.zero_grad()
-                losses += loss
-        return losses/batch_size
+    def sample_memory(self):
+        state, action, reward, new_state, done = \
+                                self.memory.sample_buffer(self.batch_size)
 
-    def target_train(self): 
-      self.target_model = self.model
-    
-    
-    def update_epsilon(self):
-      self.epsilon =  self.epsilon*self.epsilon_decay
-      self.epsilon =  max(self.epsilon_min, self.epsilon)
-    
-    
-    def save_model(self,path, model_name):
-        # serialize model to JSON
-        torch.save(self.model.state_dict(), path + model_name + ".pt")
-        print("Saved model to disk")
+        states = torch.tensor(state).to(self.q_eval.device)
+        rewards = torch.tensor(reward).to(self.q_eval.device)
+        dones = torch.tensor(done).to(self.q_eval.device)
+        actions = torch.tensor(action).to(self.q_eval.device)
+        states_ = torch.tensor(new_state).to(self.q_eval.device)
 
+        return states, actions, rewards, states_, dones
 
-    def load_model(self):
-      if os.path.isfile('/v/MinerAI/TrainedModels/DQNmodel_20200731-1454_ep1000.pt'):
-        checkpoint = torch.load('/v/MinerAI/TrainedModels/DQNmodel_20200731-1454_ep1000.pt')
-        self.model.load_state_dict(checkpoint)
-        print("Loaded model from checkpoint success!!")
-      else:
-        print('none checkpoint! Train from beginning')
- 
+    def replace_target_network(self):
+        if self.learn_step_counter % self.replace_target_cnt == 0:
+            self.q_next.load_state_dict(self.q_eval.state_dict())
 
+    def decrement_epsilon(self):
+        self.epsilon = self.epsilon - self.eps_dec \
+                           if self.epsilon > self.eps_min else self.eps_min
+
+    def save_models(self):
+        self.q_eval.save_checkpoint()
+        self.q_next.save_checkpoint()
+
+    def load_models(self):
+        self.q_eval.load_checkpoint()
+        self.q_next.load_checkpoint()
+
+    def learn(self):
+        if self.memory.mem_cntr < self.batch_size:
+            return
+
+        self.q_eval.optimizer.zero_grad()
+
+        self.replace_target_network()
+
+        states, actions, rewards, states_, dones = self.sample_memory()
+        indices = np.arange(self.batch_size)
+
+        q_pred = self.q_eval.forward(states)[indices, actions]
+        q_next = self.q_next.forward(states_).max(dim=1)[0]
+
+        q_next[dones] = 0.0
+        q_target = rewards + self.gamma*q_next
+
+        loss = self.q_eval.loss(q_target, q_pred).to(self.q_eval.device)
+        loss.backward()
+        self.q_eval.optimizer.step()
+        self.learn_step_counter += 1
+
+        self.decrement_epsilon()

@@ -51,6 +51,7 @@ class Bot1:
             self.state.init_state(data)
         except Exception as e:
             import traceback
+
             traceback.print_exc()
 
     def new_state(self, data):
@@ -60,4 +61,5 @@ class Bot1:
             self.state.update_state(data)
         except Exception as e:
             import traceback
+
             traceback.print_exc()
