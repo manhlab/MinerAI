@@ -22,12 +22,12 @@ with open(filename, 'w') as f:
     pd.DataFrame(columns=header).to_csv(f, encoding='utf-8', index=False, header=True)
 
 # Parameters for training a DQN model
-N_EPISODE = 10000 #The number of episodes for training
+N_EPISODE = 1000 #The number of episodes for training
 MAX_STEP = 1000   #The number of steps for each episode
 BATCH_SIZE = 32   #The number of experiences for each replay 
 MEMORY_SIZE = 100000 #The size of the batch for storing experiences
 SAVE_NETWORK = 100  # After this number of episodes, the DQN model is saved for testing later. 
-INITIAL_REPLAY_SIZE = 1000 #The number of experiences are stored in the memory batch before starting replaying
+INITIAL_REPLAY_SIZE = 100 #The number of experiences are stored in the memory batch before starting replaying
 INPUTNUM = 198 #The number of input values for the DQN model
 ACTIONNUM = 6  #The number of actions output from the DQN model
 MAP_MAX_X = 21 #Width of the Map
@@ -100,7 +100,7 @@ for episode_i in range(0, N_EPISODE):
             #Save the DQN model
             now = datetime.datetime.now() #Get the latest datetime
             DQNAgent.save_model("TrainedModels/",
-                                "DQNmodel_" + now.strftime("%Y%m%d-%H%M") + "_ep" + str(episode_i + 1))
+                                "trainedmodel_" + now.strftime("%Y%m%d-%H%M") + "_ep" + str(episode_i + 1))
 
         
         #Print the training information after the episode
@@ -111,7 +111,7 @@ for episode_i in range(0, N_EPISODE):
         if train == True:
             DQNAgent.update_epsilon()
     
-        print("Total rewards: ", all_reward/(episode_i+1))
+        print("Total rewards: ", all_reward/(episode_i+1), "steps: ", step+1)
     except Exception as e:
         import traceback
 
