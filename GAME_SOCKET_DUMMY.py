@@ -145,7 +145,8 @@ class GameSocket:
             bot.info.score = 0
             self.stepState.players.append(bot.info)
         self.userMatch.gameinfo.numberOfPlayers = len(self.stepState.players)
-        # print("numberOfPlayers: ", self.userMatch.gameinfo.numberOfPlayers)
+
+    # print("numberOfPlayers: ", self.userMatch.gameinfo.numberOfPlayers)
 
     def reset(
         self, requests

@@ -1,4 +1,3 @@
-rm -rf tmp
-rm -rf data
-mkdir tmp
-mkdir tmp/dqn data
+mkdir plots
+pip3 install opencv-python
+mkdir models data
