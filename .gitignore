@@ -1,4 +1,3 @@
-data/
 Maps/
 __pycache__
-tmp/dqn
+models
