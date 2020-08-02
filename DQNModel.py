@@ -147,7 +147,7 @@ class DQN:
         self.decrement_epsilon()
 
     def get_state2(self, observation):
-        observation = np.array(observation).reshape(-1, 198)
+        observation = np.array(torch.tensor(observation).cpu()).reshape(-1, 198)
         for i in range(observation.shape[0]):
             observation[
                 i, min(int(observation[i, 192]) + int(observation[i, 193]) * 9, 192)
