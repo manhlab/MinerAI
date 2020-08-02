@@ -36,7 +36,7 @@ class DQN:
         mem_size=10000,
         batch_size=32,
         eps_min=0.01,
-        eps_dec=5e-7,
+        eps_dec=5e-10,
         replace=1000,
         algo="dnqagent",
         env_name="minerai",
@@ -65,8 +65,6 @@ class DQN:
             name=self.env_name + "_" + self.algo + "_q_eval",
             chkpt_dir=self.chkpt_dir,
         )
-        if os.path.exists(self.q_eval.checkpoint_file):
-            self.q_eval.load_checkpoint()
 
         self.q_next = DQNetwork(
             self.lr,
@@ -75,9 +73,6 @@ class DQN:
             name=self.env_name + "_" + self.algo + "_q_next",
             chkpt_dir=self.chkpt_dir,
         )
-        if os.path.exists(self.q_next.checkpoint_file):
-            self.q_next.load_checkpoint()
-
     def choose_action(self, observation):
         if np.random.random() > self.epsilon:
             state = torch.tensor([observation], dtype=torch.float).to(
@@ -106,7 +101,8 @@ class DQN:
         return states, actions, rewards, states_, dones
 
     def replace_target_network(self):
-        if self.learn_step_counter % self.replace_target_cnt == 0:
+        if self.replace_target_cnt is not None and \
+           self.learn_step_counter % self.replace_target_cnt == 0:
             self.q_next.load_state_dict(self.q_eval.state_dict())
 
     def decrement_epsilon(self):
@@ -145,9 +141,10 @@ class DQN:
         self.learn_step_counter += 1
 
         self.decrement_epsilon()
+        
 
     def get_state2(self, observation):
-        observation = np.array(observation).reshape(-1, 198)
+        observation = np.array(torch.tensor(observation,requires_grad=False).cpu()).reshape(-1, 198)
         for i in range(observation.shape[0]):
             observation[
                 i, min(int(observation[i, 192]) + int(observation[i, 193]) * 9, 192)
@@ -163,7 +160,7 @@ class DQN:
             ] = 10000
 
         return (
-            torch.tensor([observation], dtype=torch.float)
+            torch.tensor([observation], dtype=torch.float, requires_grad=True)
             .to(self.q_eval.device)
             .view(-1, 198)
         )

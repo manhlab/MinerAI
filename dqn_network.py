@@ -36,7 +36,7 @@ class DQNetwork(nn.Module):
         return int(np.prod(dims.size()))
 
     def forward(self, state, state2):
-        conv1 = F.relu(self.conv1(state[:, :189].view(-1, 1, 21, 9)))
+        conv1 = F.relu(self.conv1(state[:, :189].view(-1, 1, 9, 21)))
         conv2 = F.relu(self.conv2(conv1))
         conv3 = F.relu(self.conv3(conv2))
         # conv3 shape is BS x n_filters x H x W
@@ -49,7 +49,7 @@ class DQNetwork(nn.Module):
         conv_state2 = conv3.view(conv3s.size()[0], -1)
         flat1s = F.relu(self.fc1(conv_state2))
 
-        actions = self.fc2(torch.cat((flat1, flat1s), dim=1))
+        actions = F.relu(self.fc2(torch.cat((flat1, flat1s), dim=1)))
         actions = self.fc3(torch.cat((actions, state2[:, 191].view(-1, 1)), dim=1))
         # actions = self.fc2(flat1)
         return actions

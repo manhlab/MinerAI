@@ -17,7 +17,7 @@ if len(sys.argv) == 3:
     PORT = int(sys.argv[2])
 
 
-N_EPISODE = 10000000  # The number of episodes for training
+N_EPISODE = 1000000  # The number of episodes for training
 MAX_STEP = 1000  # The number of steps for each episode
 BATCH_SIZE = 32  # The number of experiences for each replay
 
@@ -42,8 +42,8 @@ DQNAgent = DQN(
     algo="dqnagent",
     env_name="minerai",
     gamma=0.99,
-    epsilon=0.9,
-    lr=0.0001,
+    epsilon=1,
+    lr=0.00001,
 )
 if load_checkpoint:
     DQNAgent.load_models()
@@ -66,14 +66,14 @@ fname = (
 )
 figure_file = "plots/" + fname + ".png"
 
-n_steps = 0
+n_steps = -100
 scores, eps_history, steps_array = [], [], []
 
 
 # Training Process
 # the main part of the deep-q learning agorithm
 
-best_score = 0
+best_score = -100
 for episode_i in range(0, N_EPISODE):
     try:
         mapID = np.random.randint(1, 6)
@@ -86,23 +86,24 @@ for episode_i in range(0, N_EPISODE):
         minerEnv.send_map_info(request)
         minerEnv.reset()
         s = minerEnv.get_state()
-        total_reward = 0
+        
         terminate = False
         maxStep = minerEnv.state.mapInfo.maxStep
 
         n_steps = 0
+        total_reward = 0
         while not terminate:
             action = DQNAgent.choose_action(s)
             minerEnv.step(str(action))
             s_next = minerEnv.get_state()
             reward = minerEnv.get_reward()
 
-            
-            if not load_checkpoint:
+            terminate = minerEnv.check_terminate()
+            if not load_checkpoint and not terminate:
                 DQNAgent.store_transition(s, action, reward, s_next, terminate)
                 DQNAgent.learn()
-                
-            terminate = minerEnv.check_terminate()
+
+            
             total_reward += reward
             s = s_next
             n_steps += 1
