@@ -122,27 +122,19 @@ class DQN:
     def learn(self):
         if self.memory.mem_cntr < self.batch_size:
             return
-
         self.q_eval.optimizer.zero_grad()
-
         self.replace_target_network()
-
         states, actions, rewards, states_, dones = self.sample_memory()
         indices = np.arange(self.batch_size)
-
         q_pred = self.q_eval.forward(states, self.get_state2(states))[indices, actions]
         q_next = self.q_next.forward(states_, self.get_state2(states_)).max(dim=1)[0]
-
         q_next[dones] = 0.0
         q_target = rewards + self.gamma * q_next
-
         loss = self.q_eval.loss(q_target, q_pred).to(self.q_eval.device)
         loss.backward()
         self.q_eval.optimizer.step()
         self.learn_step_counter += 1
-
         self.decrement_epsilon()
-        
 
     def get_state2(self, observation):
         observation = np.array(torch.tensor(observation,requires_grad=False).cpu()).reshape(-1, 198)

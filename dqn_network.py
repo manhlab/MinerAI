@@ -13,13 +13,13 @@ class DQNetwork(nn.Module):
         self.checkpoint_dir = chkpt_dir
         self.checkpoint_file = os.path.join(self.checkpoint_dir, f"{name}.bin")
 
-        self.conv1 = nn.Conv2d(1, 2, 3, stride=4)
-        self.conv2 = nn.Conv2d(2, 4, 2, stride=2)
-        self.conv3 = nn.Conv2d(4, 4, 1, stride=1)
+        self.conv1 = nn.Conv2d(1, 32, 2, stride=1)
+        self.conv2 = nn.Conv2d(32, 64, 4, stride=2)
+        self.conv3 = nn.Conv2d(64, 64, 2, stride=1)
 
-        fc_input_dims = self.calculate_conv_output_dims(input_dims)
+      
 
-        self.fc1 = nn.Linear(fc_input_dims, 512)
+        self.fc1 = nn.Linear(1024, 512)
         self.fc2 = nn.Linear(512 * 2, n_actions)
         self.fc3 = nn.Linear(n_actions + 1, n_actions)
         self.optimizer = optim.RMSprop(self.parameters(), lr=lr)
@@ -28,22 +28,17 @@ class DQNetwork(nn.Module):
         self.device = T.device("cuda:0" if T.cuda.is_available() else "cpu")
         self.to(self.device)
 
-    def calculate_conv_output_dims(self, input_dims):
-        state = T.zeros(1, 1, 9, 21)
-        dims = self.conv1(state)
-        dims = self.conv2(dims)
-        dims = self.conv3(dims)
-        return int(np.prod(dims.size()))
+
 
     def forward(self, state, state2):
-        conv1 = F.relu(self.conv1(state[:, :189].view(-1, 1, 9, 21)))
+        conv1 = F.relu(self.conv1(state[:, :189].view(-1,1,9, 21)))
         conv2 = F.relu(self.conv2(conv1))
         conv3 = F.relu(self.conv3(conv2))
         # conv3 shape is BS x n_filters x H x W
         conv_state = conv3.view(conv3.size()[0], -1)
         # conv_state shape is BS x (n_filters * H * W)
         flat1 = F.relu(self.fc1(conv_state))
-        conv1s = F.relu(self.conv1(state2[:, :189].view(-1, 1, 9, 21)))
+        conv1s = F.relu(self.conv1(state2[:, :189].view(-1,1, 9, 21)))
         conv2s = F.relu(self.conv2(conv1s))
         conv3s = F.relu(self.conv3(conv2s))
         conv_state2 = conv3.view(conv3s.size()[0], -1)

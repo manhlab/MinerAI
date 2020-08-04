@@ -124,6 +124,7 @@ for episode_i in range(0, N_EPISODE):
 
         if avg_score > best_score:
             best_score = avg_score
+            DQNAgent.save_models()
         eps_history.append(DQNAgent.epsilon)
 
     except Exception as e:
