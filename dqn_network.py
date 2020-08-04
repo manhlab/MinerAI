@@ -38,6 +38,9 @@ class DQNetwork(nn.Module):
         conv_state = conv3.view(conv3.size()[0], -1)
         # conv_state shape is BS x (n_filters * H * W)
         flat1 = F.relu(self.fc1(conv_state))
+
+
+        
         conv1s = F.relu(self.conv1(state2[:, :189].view(-1,1, 9, 21)))
         conv2s = F.relu(self.conv2(conv1s))
         conv3s = F.relu(self.conv3(conv2s))
