@@ -73,6 +73,7 @@ class DQN:
             name=self.env_name + "_" + self.algo + "_q_next",
             chkpt_dir=self.chkpt_dir,
         )
+        # self.load_models()
     def choose_action(self, observation):
         if np.random.random() > self.epsilon:
             state = torch.tensor([observation], dtype=torch.float).to(

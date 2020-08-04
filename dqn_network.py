@@ -11,7 +11,7 @@ class DQNetwork(nn.Module):
     def __init__(self, lr, n_actions, name, input_dims, chkpt_dir):
         super(DQNetwork, self).__init__()
         self.checkpoint_dir = chkpt_dir
-        self.checkpoint_file = os.path.join(self.checkpoint_dir, name)
+        self.checkpoint_file = os.path.join(self.checkpoint_dir, f"{name}.bin")
 
         self.conv1 = nn.Conv2d(1, 2, 3, stride=4)
         self.conv2 = nn.Conv2d(2, 4, 2, stride=2)
@@ -29,7 +29,7 @@ class DQNetwork(nn.Module):
         self.to(self.device)
 
     def calculate_conv_output_dims(self, input_dims):
-        state = T.zeros(1, 1, 21, 9)
+        state = T.zeros(1, 1, 9, 21)
         dims = self.conv1(state)
         dims = self.conv2(dims)
         dims = self.conv3(dims)

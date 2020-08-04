@@ -17,7 +17,7 @@ if len(sys.argv) == 3:
     PORT = int(sys.argv[2])
 
 
-N_EPISODE = 1000000  # The number of episodes for training
+N_EPISODE = 100000  # The number of episodes for training
 MAX_STEP = 1000  # The number of steps for each episode
 BATCH_SIZE = 32  # The number of experiences for each replay
 
