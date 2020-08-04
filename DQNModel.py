@@ -140,16 +140,16 @@ class DQN:
         observation = np.array(torch.tensor(observation,requires_grad=False).cpu()).reshape(-1, 198)
         for i in range(observation.shape[0]):
             observation[
-                i, min(int(observation[i, 192]) + int(observation[i, 193]) * 9, 192)
+                i, min(int(observation[i, 192]) + int(observation[i, 193]) * 9, 0)
             ] = 1000
             observation[
-                i, min(int(observation[i, 194]) + int(observation[i, 195]) * 9, 192)
+                i, min(int(observation[i, 194]) + int(observation[i, 195]) * 9, 0)
             ] = 1000
             observation[
-                i, min(int(observation[i, 196]) + int(observation[i, 197]) * 9, 192)
+                i, min(int(observation[i, 196]) + int(observation[i, 197]) * 9, 0)
             ] = 1000
             observation[
-                i, min(int(observation[i, 189]) + int(observation[i, 190]) * 9, 192)
+                i, min(int(observation[i, 189]) + int(observation[i, 190]) * 9, 0)
             ] = 10000
 
         return (
